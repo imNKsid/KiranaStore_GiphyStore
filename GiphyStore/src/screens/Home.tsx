@@ -219,8 +219,6 @@ const getExtention = (filename: string) => {
   return /[.]/.exec(filename) ? /[^.]+$/.exec(filename) : undefined;
 };
 
-export default Home;
-
 const styles = StyleSheet.create({
   container: {backgroundColor: 'white', flex: 1},
   searchBox: {
@@ -292,3 +290,5 @@ const styles = StyleSheet.create({
   },
   btnText: {textAlign: 'center', color: 'white', top: -1},
 });
+
+export default Home;
