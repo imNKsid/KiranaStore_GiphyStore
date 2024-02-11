@@ -7,9 +7,7 @@ import {
   TextInput,
   View,
   TouchableOpacity,
-  Linking,
-  Platform,
-  ToastAndroid,
+  Alert,
 } from 'react-native';
 import React, {useState} from 'react';
 import {
@@ -18,6 +16,8 @@ import {
   GiphyMedia,
   GiphySDK,
 } from '@giphy/react-native-sdk';
+import Share from 'react-native-share';
+import RNFetchBlob from 'rn-fetch-blob';
 
 const key = 'HG3g4GJ0BLvcXTFzmRM4Z5I8D9H35vKD';
 
@@ -28,44 +28,38 @@ const Home = () => {
   const [media, setMedia] = useState<GiphyMedia | null>(null);
 
   return (
-    <View style={{backgroundColor: 'white', flex: 1}}>
+    <View style={styles.container}>
       <StatusBar barStyle={'dark-content'} backgroundColor={'white'} />
-      <TextInput
-        placeholder="Search GIFs..."
-        value={searchText}
-        onChangeText={setSearchText}
-        style={{
-          paddingHorizontal: 10,
-          borderColor: 'gray',
-          borderWidth: 1,
-          marginHorizontal: 10,
-          borderRadius: 10,
-          marginBottom: 20,
-        }}
-      />
+      <View style={styles.searchBox}>
+        <Image
+          source={require('../assets/images/search.png')}
+          style={styles.searchImg}
+        />
+        <TextInput
+          placeholder="Search GIFs..."
+          value={searchText}
+          onChangeText={setSearchText}
+          style={styles.searchInput}
+          placeholderTextColor={'gray'}
+        />
+      </View>
       {searchText.length > 3 ? (
         <>
           <GiphyGridView
             content={GiphyContent.search({
               searchQuery: searchText,
             })}
-            cellPadding={3}
+            cellPadding={4}
             style={{flex: 1}}
-            onMediaSelect={e => {
-              console.log('e =>', e.nativeEvent.media);
-              setMedia(e.nativeEvent.media);
-            }}
+            onMediaSelect={e => setMedia(e.nativeEvent.media)}
           />
         </>
       ) : (
         <GiphyGridView
           content={GiphyContent.trendingGifs()}
-          cellPadding={3}
+          cellPadding={4}
           style={{flex: 1}}
-          onMediaSelect={e => {
-            console.log('e =>', e.nativeEvent.media);
-            setMedia(e.nativeEvent.media);
-          }}
+          onMediaSelect={e => setMedia(e.nativeEvent.media)}
         />
       )}
       {media ? (
@@ -75,52 +69,35 @@ const Home = () => {
           visible={media.data.images.original.url ? true : false}
           statusBarTranslucent={true}
           onRequestClose={() => setMedia(null)}>
-          <View
-            style={{
-              justifyContent: 'center',
-              alignItems: 'center',
-              flex: 1,
-              backgroundColor: '#00000080', //'rgb(255,255,255,0.8)',
-            }}>
-            <View
-              style={{
-                backgroundColor: '#fff',
-                width: 300,
-                height: 360,
-                alignSelf: 'center',
-              }}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
               <TouchableOpacity onPress={() => setMedia(null)}>
                 <Image
                   source={require('../assets/images/cross.png')}
-                  style={{alignSelf: 'flex-end', width: 30, height: 30}}
+                  style={styles.crossIcon}
                 />
               </TouchableOpacity>
-              <View
-                style={{
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}>
+              <View style={styles.imageNbtn}>
                 <Image
                   source={{uri: media.data.images.original.url}}
-                  style={{width: 290, height: 265}}
+                  style={styles.modalImage}
                 />
-                <TouchableOpacity
-                  onPress={() =>
-                    shareToWhatsapp(media.data.images.original.url)
-                  }
-                  style={{
-                    marginTop: 10,
-                    width: 150,
-                    height: 50,
-                    backgroundColor: '#5ABB58',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    borderRadius: 10,
-                  }}>
-                  <Text style={{textAlign: 'center'}}>
-                    {'Share to WhatsApp'}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.btnsContainer}>
+                  <TouchableOpacity
+                    onPress={() => shareImage(media.data.images.original.url)}
+                    style={styles.shareBtnView}>
+                    <Text style={styles.shareBtnText}>
+                      {'Share to WhatsApp'}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() =>
+                      downloadImage(media.data.images.original.url)
+                    }
+                    style={styles.btnView}>
+                    <Text style={styles.btnText}>{'Download'}</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
@@ -130,40 +107,151 @@ const Home = () => {
   );
 };
 
-const shareToWhatsapp = async (base64image: string) => {
-  const dynamicLink = `data:image/png;base64, ${base64image}`;
+const shareImage = (imgUrl: string) => {
+  RNFetchBlob.fetch('GET', imgUrl)
+    .then(resp => {
+      console.log('response : ', resp);
+      console.log(resp.data);
+      let base64image = resp.data;
+      share('data:image/gif;base64,' + base64image);
+    })
+    .catch(err => console.log('err =>', err));
+};
 
-  const message = encodeURIComponent(`${dynamicLink}`);
-  const supported = await Linking.canOpenURL(
-    `whatsapp://send?text=${message}`,
-  ).catch(e => console.log('URL err =>', JSON.stringify(e)));
+const share = (base64image: string) => {
+  console.log('base64image : ', base64image);
+  let shareOptions = {
+    title: 'Share via',
+    url: base64image,
+    subject: 'Subject',
+    social: Share.Social.WHATSAPP,
+  };
 
-  if (supported) {
-    Linking.openURL(`whatsapp://send?text=${message}`);
-  } else {
-    if (Platform.OS === 'android') {
-      Linking.openURL(`whatsapp://send?text=${message}`).catch(_ => {
-        ToastAndroid.show(
-          'Whatsapp not found in this device',
-          ToastAndroid.SHORT,
-        );
-      });
-    } else {
-      ToastAndroid.show(
-        'Whatsapp not found in this device',
-        ToastAndroid.SHORT,
-      );
-    }
-  }
+  Share.shareSingle(shareOptions)
+    .then(res => {
+      console.log(res);
+      Alert.alert('Image Shared Successfully.');
+    })
+    .catch(err => {
+      err && console.log(err);
+    });
+};
+
+const downloadImage = (imgUrl: string) => {
+  // Main function to download the image
+
+  // To add the time suffix in filename
+  let date = new Date();
+  // Image URL which we want to download
+  let image_URL = imgUrl;
+  // Getting the extention of the file
+  let ext: any = getExtention(image_URL);
+  console.log();
+
+  ext = '.' + ext[0];
+  // Get config and fs from RN Fetch Blob
+  // config: To pass the downloading related options
+  // fs: Directory path where we want our image to download
+  const {config, fs} = RNFetchBlob;
+  let PictureDir = fs.dirs.PictureDir;
+  let options = {
+    fileCache: true,
+    addAndroidDownloads: {
+      // Related to the Android only
+      useDownloadManager: true,
+      notification: true,
+      path:
+        PictureDir +
+        '/image_' +
+        Math.floor(date.getTime() + date.getSeconds() / 2) +
+        ext,
+      description: 'Image',
+    },
+  };
+  config(options)
+    .fetch('GET', image_URL)
+    .then(res => {
+      // Showing alert after successful downloading
+      console.log('res -> ', JSON.stringify(res));
+      Alert.alert('Image Downloaded Successfully.');
+    });
+};
+
+const getExtention = (filename: string) => {
+  // To get the file extension
+  return /[.]/.exec(filename) ? /[^.]+$/.exec(filename) : undefined;
 };
 
 export default Home;
 
 const styles = StyleSheet.create({
-  image: {
-    width: 300,
-    height: 150,
-    borderWidth: 3,
-    marginBottom: 5,
+  container: {backgroundColor: 'white', flex: 1},
+  searchBox: {
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginHorizontal: 10,
+    borderRadius: 10,
+    marginVertical: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
   },
+  searchImg: {width: 20, height: 20, tintColor: 'gray', marginLeft: 10},
+  searchInput: {
+    paddingHorizontal: 10,
+    width: '90%',
+  },
+  modalContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    // flex:1,
+    height: '110%',
+    width: '100%',
+    backgroundColor: '#00000080', //'rgb(255,255,255,0.8)',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    width: 350,
+    height: 380,
+    alignSelf: 'center',
+    borderRadius: 20,
+  },
+  crossIcon: {
+    alignSelf: 'flex-end',
+    width: 30,
+    height: 30,
+    marginRight: 5,
+    marginTop: 5,
+  },
+  imageNbtn: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  modalImage: {width: 290, height: 265, resizeMode: 'stretch'},
+  btnsContainer: {
+    marginTop: 10,
+    width: '75%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  shareBtnView: {
+    width: 150,
+    height: 50,
+    backgroundColor: '#5ABB58',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  shareBtnText: {textAlign: 'center'},
+  btnView: {
+    width: 100,
+    height: 50,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  btnText: {textAlign: 'center', color: 'white', top: -1},
 });
