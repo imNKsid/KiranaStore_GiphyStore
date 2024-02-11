@@ -1,15 +1,10 @@
 import {
-  Modal,
   Image,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
   View,
-  TouchableOpacity,
-  Alert,
-  PermissionsAndroid,
-  ToastAndroid,
 } from 'react-native';
 import React, {useState} from 'react';
 import {
@@ -18,9 +13,7 @@ import {
   GiphyMedia,
   GiphySDK,
 } from '@giphy/react-native-sdk';
-import Share, {ShareSingleOptions} from 'react-native-share';
-import RNFetchBlob from 'rn-fetch-blob';
-import {throttle} from 'lodash';
+import GifDescModal from '../components/GifDescModal';
 
 const key = 'HG3g4GJ0BLvcXTFzmRM4Z5I8D9H35vKD';
 
@@ -30,17 +23,17 @@ const Home = () => {
   const [searchText, setSearchText] = useState('');
   const [media, setMedia] = useState<GiphyMedia | null>(null);
 
-  const throttledShare = throttle(shareImage, 1000);
   return (
     <View style={styles.container}>
       <StatusBar barStyle={'dark-content'} backgroundColor={'white'} />
+      <Text style={styles.headingText}>{'Welcome to The Giphy Store'}</Text>
       <View style={styles.searchBox}>
         <Image
           source={require('../assets/images/search.png')}
           style={styles.searchImg}
         />
         <TextInput
-          placeholder="Search GIFs..."
+          placeholder="Search your favourite GIFs..."
           value={searchText}
           onChangeText={setSearchText}
           style={styles.searchInput}
@@ -66,161 +59,19 @@ const Home = () => {
           onMediaSelect={e => setMedia(e.nativeEvent.media)}
         />
       )}
-      {media ? (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={media.data.images.original.url ? true : false}
-          statusBarTranslucent={true}
-          onRequestClose={() => setMedia(null)}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <TouchableOpacity onPress={() => setMedia(null)}>
-                <Image
-                  source={require('../assets/images/cross.png')}
-                  style={styles.crossIcon}
-                />
-              </TouchableOpacity>
-              <View style={styles.imageNbtn}>
-                <Image
-                  source={{uri: media.data.images.original.url}}
-                  style={styles.modalImage}
-                />
-                <View style={styles.btnsContainer}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      throttledShare(media.data.images.original.url)
-                    }
-                    style={styles.shareBtnView}>
-                    <Text style={styles.shareBtnText}>
-                      {'Share to WhatsApp'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() =>
-                      checkPermission(media.data.images.original.url)
-                    }
-                    style={styles.btnView}>
-                    <Text style={styles.btnText}>{'Download'}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      ) : null}
+      <GifDescModal media={media} onClose={() => setMedia(null)} />
     </View>
   );
 };
 
-// Function to initiate sharing
-const shareImage = (imgUrl: string) => {
-  RNFetchBlob.fetch('GET', imgUrl)
-    .then(resp => {
-      console.log('response : ', resp);
-      console.log(resp.data);
-      let base64image = resp.data;
-      share('data:image/gif;base64,' + base64image);
-    })
-    .catch(err => console.log('err =>', err));
-};
-
-// Function to share an image to WhatsApp
-const share = (base64image: string) => {
-  let shareOptions = {
-    title: 'Share via',
-    url: base64image,
-    subject: 'Subject',
-    social: Share.Social.WHATSAPP,
-  } as ShareSingleOptions;
-
-  Share.shareSingle(shareOptions)
-    .then(res => {
-      // console.log('Share success =>', res);
-      Alert.alert('Image Shared Successfully.');
-      // Showing alert after successful sharing
-    })
-    .catch(err => {
-      err && console.log(err);
-    });
-};
-
-const checkPermission = async (imgUrl: string) => {
-  try {
-    const granted = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
-      {
-        title: 'Storage Permission Required',
-        message: 'App needs access to your storage to download Photos',
-        buttonPositive: 'OK',
-      },
-    );
-    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-      // Once user grant the permission start downloading
-      console.log('Storage Permission Granted.');
-      downloadImage(imgUrl);
-    } else {
-      // If permission denied then show alert
-      Alert.alert('Storage Permission Not Granted', '', [
-        {
-          text: 'OK',
-          onPress: () =>
-            ToastAndroid.show(
-              'Permission denied. Go to settings and give location access.',
-              ToastAndroid.SHORT,
-            ),
-        },
-      ]);
-    }
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-const downloadImage = (imgUrl: string) => {
-  let date = new Date(); // To add the time suffix in filename
-
-  let ext: any = getExtention(imgUrl); // Getting the extention of the file
-  ext = '.' + ext[0];
-
-  // Get config and fs from RN Fetch Blob
-  // config: To pass the downloading related options
-  // fs: Directory path where we want our image to download
-  const {config, fs} = RNFetchBlob;
-  let PictureDir = fs.dirs.PictureDir;
-  let options = {
-    fileCache: true,
-    addAndroidDownloads: {
-      // Related to the Android only
-      useDownloadManager: true,
-      notification: true,
-      path:
-        PictureDir +
-        '/image_' +
-        Math.floor(date.getTime() + date.getSeconds() / 2) +
-        ext,
-      description: 'Image',
-    },
-  };
-  config(options)
-    .fetch('GET', imgUrl)
-    .then(res => {
-      // console.log('res -> ', JSON.stringify(res));
-      Alert.alert('Image Downloaded Successfully.');
-      // Showing alert after successful downloading
-    })
-    .catch(err => {
-      err && console.log(err);
-    });
-};
-
-// Function to get the file extension
-const getExtention = (filename: string) => {
-  return /[.]/.exec(filename) ? /[^.]+$/.exec(filename) : undefined;
-};
-
 const styles = StyleSheet.create({
   container: {backgroundColor: 'white', flex: 1},
+  headingText: {
+    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: '600',
+    color: 'purple',
+  },
   searchBox: {
     borderColor: 'gray',
     borderWidth: 1,
@@ -239,7 +90,6 @@ const styles = StyleSheet.create({
   modalContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    // flex:1,
     height: '110%',
     width: '100%',
     backgroundColor: '#00000080', //'rgb(255,255,255,0.8)',
