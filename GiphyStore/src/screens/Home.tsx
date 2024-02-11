@@ -18,6 +18,7 @@ import {
 } from '@giphy/react-native-sdk';
 import Share, {ShareSingleOptions} from 'react-native-share';
 import RNFetchBlob from 'rn-fetch-blob';
+import {throttle} from 'lodash';
 
 const key = 'HG3g4GJ0BLvcXTFzmRM4Z5I8D9H35vKD';
 
@@ -27,6 +28,7 @@ const Home = () => {
   const [searchText, setSearchText] = useState('');
   const [media, setMedia] = useState<GiphyMedia | null>(null);
 
+  const throttledShare = throttle(shareImage, 1000);
   return (
     <View style={styles.container}>
       <StatusBar barStyle={'dark-content'} backgroundColor={'white'} />
@@ -84,7 +86,9 @@ const Home = () => {
                 />
                 <View style={styles.btnsContainer}>
                   <TouchableOpacity
-                    onPress={() => shareImage(media.data.images.original.url)}
+                    onPress={() =>
+                      throttledShare(media.data.images.original.url)
+                    }
                     style={styles.shareBtnView}>
                     <Text style={styles.shareBtnText}>
                       {'Share to WhatsApp'}
