@@ -18,10 +18,11 @@ import {
 interface ModalProps {
   media: GiphyMedia | null;
   onClose: () => void;
+  isDarkTheme: boolean;
 }
 
 const GifDescModal = (props: ModalProps) => {
-  const {media, onClose} = props;
+  const {media, onClose, isDarkTheme} = props;
 
   const throttledShare = throttle(shareImage, 1000);
   return media ? (
@@ -32,11 +33,18 @@ const GifDescModal = (props: ModalProps) => {
       statusBarTranslucent={true}
       onRequestClose={onClose}>
       <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
+        <View
+          style={[
+            styles.modalContent,
+            isDarkTheme ? styles.darkBackground : styles.lightBackground,
+          ]}>
           <TouchableOpacity onPress={onClose}>
             <Image
               source={require('../assets/images/cross.png')}
-              style={styles.crossIcon}
+              style={[
+                styles.crossIcon,
+                isDarkTheme ? styles.lightCrossIcon : styles.darkCrossIcon,
+              ]}
             />
           </TouchableOpacity>
           <View style={styles.imageNbtn}>
@@ -48,12 +56,27 @@ const GifDescModal = (props: ModalProps) => {
               <TouchableOpacity
                 onPress={() => throttledShare(media.data.images.original.url)}
                 style={styles.shareBtnView}>
-                <Text style={styles.shareBtnText}>{'Share to WhatsApp'}</Text>
+                <Text
+                  style={[
+                    styles.btnText,
+                    isDarkTheme ? styles.lightBtnText : styles.darkBtnText,
+                  ]}>
+                  {'Share to WhatsApp'}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => downloadImage(media.data.images.original.url)}
-                style={styles.btnView}>
-                <Text style={styles.btnText}>{'Download'}</Text>
+                style={[
+                  styles.btnView,
+                  isDarkTheme ? styles.lightBtnView : styles.darkBtnView,
+                ]}>
+                <Text
+                  style={[
+                    styles.btnText,
+                    isDarkTheme ? styles.darkBtnText : styles.lightBtnText,
+                  ]}>
+                  {'Download'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -67,25 +90,29 @@ export default GifDescModal;
 
 const styles = StyleSheet.create({
   modalContainer: {
-    flex: 1,
+    width: '100%',
+    height: '110%',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#00000080', //'rgb(255,255,255,0.8)',
   },
   modalContent: {
-    backgroundColor: '#fff',
     width: 350,
     height: 380,
     alignSelf: 'center',
     borderRadius: 20,
   },
+  darkBackground: {backgroundColor: '#2D2D2D'},
+  lightBackground: {backgroundColor: 'white'},
   crossIcon: {
     alignSelf: 'flex-end',
-    width: 30,
-    height: 30,
-    marginRight: 5,
-    marginTop: 5,
+    width: 25,
+    height: 25,
+    marginRight: 10,
+    marginTop: 10,
   },
+  darkCrossIcon: {tintColor: 'gray'},
+  lightCrossIcon: {tintColor: '#FDFDFD'},
   imageNbtn: {
     justifyContent: 'center',
     alignItems: 'center',
@@ -101,20 +128,22 @@ const styles = StyleSheet.create({
   },
   shareBtnView: {
     width: 150,
-    height: 50,
+    height: 45,
     backgroundColor: '#5ABB58',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
   },
-  shareBtnText: {textAlign: 'center'},
+  btnText: {textAlign: 'center', top: -1},
   btnView: {
     width: 100,
-    height: 50,
-    backgroundColor: 'black',
+    height: 45,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
   },
-  btnText: {textAlign: 'center', color: 'white', top: -1},
+  darkBtnView: {backgroundColor: 'black'},
+  lightBtnView: {backgroundColor: '#E5E5E5'},
+  darkBtnText: {color: 'black'},
+  lightBtnText: {color: 'white'},
 });

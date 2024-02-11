@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   View,
+  useColorScheme,
 } from 'react-native';
 import React, {useState} from 'react';
 import {
@@ -23,20 +24,46 @@ const Home = () => {
   const [searchText, setSearchText] = useState('');
   const [media, setMedia] = useState<GiphyMedia | null>(null);
 
+  const theme = useColorScheme();
+  const isDarkTheme = theme === 'dark';
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle={'dark-content'} backgroundColor={'white'} />
-      <Text style={styles.headingText}>{'Welcome to The Giphy Store'}</Text>
-      <View style={styles.searchBox}>
+    <View
+      style={[
+        styles.container,
+        isDarkTheme ? styles.darkBackground : styles.lightBackground,
+      ]}>
+      <StatusBar
+        barStyle={isDarkTheme ? 'light-content' : 'dark-content'}
+        backgroundColor={isDarkTheme ? 'black' : 'white'}
+      />
+      <Text
+        style={[
+          styles.headingText,
+          isDarkTheme ? styles.darkText : styles.lightText,
+        ]}>
+        {'Welcome to The Giphy Store'}
+      </Text>
+      <View
+        style={[
+          styles.searchBox,
+          isDarkTheme ? styles.lightBorder : styles.darkBorder,
+        ]}>
         <Image
           source={require('../assets/images/search.png')}
-          style={styles.searchImg}
+          style={[
+            styles.searchImg,
+            isDarkTheme ? styles.lightSearchImg : styles.darkSearchImg,
+          ]}
         />
         <TextInput
           placeholder="Search your favourite GIFs..."
           value={searchText}
           onChangeText={setSearchText}
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            isDarkTheme ? styles.lightSearchInput : styles.darkSearchInput,
+          ]}
           placeholderTextColor={'gray'}
         />
       </View>
@@ -59,21 +86,29 @@ const Home = () => {
           onMediaSelect={e => setMedia(e.nativeEvent.media)}
         />
       )}
-      <GifDescModal media={media} onClose={() => setMedia(null)} />
+      <GifDescModal
+        media={media}
+        onClose={() => setMedia(null)}
+        isDarkTheme={isDarkTheme}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {backgroundColor: 'white', flex: 1},
+  container: {
+    flex: 1,
+  },
+  darkBackground: {backgroundColor: 'black'},
+  lightBackground: {backgroundColor: 'white'},
   headingText: {
     textAlign: 'center',
     fontSize: 24,
     fontWeight: '600',
-    color: 'purple',
   },
+  darkText: {color: '#CBC3E3'},
+  lightText: {color: 'purple'},
   searchBox: {
-    borderColor: 'gray',
     borderWidth: 1,
     marginHorizontal: 10,
     borderRadius: 10,
@@ -82,11 +117,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 5,
   },
-  searchImg: {width: 20, height: 20, tintColor: 'gray', marginLeft: 10},
+  darkBorder: {borderColor: 'gray'},
+  lightBorder: {borderColor: 'white'},
+  searchImg: {width: 20, height: 20, marginLeft: 10},
+  darkSearchImg: {tintColor: 'gray'},
+  lightSearchImg: {tintColor: 'white'},
   searchInput: {
     paddingHorizontal: 10,
     width: '90%',
   },
+  darkSearchInput: {color: 'black'},
+  lightSearchInput: {color: 'white'},
   modalContainer: {
     justifyContent: 'center',
     alignItems: 'center',
