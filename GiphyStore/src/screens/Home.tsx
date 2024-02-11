@@ -174,6 +174,9 @@ const downloadImage = (imgUrl: string) => {
       // console.log('res -> ', JSON.stringify(res));
       Alert.alert('Image Downloaded Successfully.');
       // Showing alert after successful downloading
+    })
+    .catch(err => {
+      err && console.log(err);
     });
 };
 
