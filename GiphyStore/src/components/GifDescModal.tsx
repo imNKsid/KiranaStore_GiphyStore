@@ -9,7 +9,11 @@ import {
 import React from 'react';
 import {GiphyMedia} from '@giphy/react-native-sdk';
 import {throttle} from 'lodash';
-import {checkPermission, shareImage} from '../utils/general-utils';
+import {
+  checkPermission,
+  downloadImage,
+  shareImage,
+} from '../utils/general-utils';
 
 interface ModalProps {
   media: GiphyMedia | null;
@@ -47,7 +51,7 @@ const GifDescModal = (props: ModalProps) => {
                 <Text style={styles.shareBtnText}>{'Share to WhatsApp'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => checkPermission(media.data.images.original.url)}
+                onPress={() => downloadImage(media.data.images.original.url)}
                 style={styles.btnView}>
                 <Text style={styles.btnText}>{'Download'}</Text>
               </TouchableOpacity>
