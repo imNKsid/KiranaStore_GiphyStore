@@ -8,6 +8,8 @@ import {
   View,
   TouchableOpacity,
   Alert,
+  PermissionsAndroid,
+  ToastAndroid,
 } from 'react-native';
 import React, {useState} from 'react';
 import {
@@ -96,7 +98,7 @@ const Home = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() =>
-                      downloadImage(media.data.images.original.url)
+                      checkPermission(media.data.images.original.url)
                     }
                     style={styles.btnView}>
                     <Text style={styles.btnText}>{'Download'}</Text>
@@ -141,6 +143,38 @@ const share = (base64image: string) => {
     .catch(err => {
       err && console.log(err);
     });
+};
+
+const checkPermission = async (imgUrl: string) => {
+  try {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+      {
+        title: 'Storage Permission Required',
+        message: 'App needs access to your storage to download Photos',
+        buttonPositive: 'OK',
+      },
+    );
+    if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      // Once user grant the permission start downloading
+      console.log('Storage Permission Granted.');
+      downloadImage(imgUrl);
+    } else {
+      // If permission denied then show alert
+      Alert.alert('Storage Permission Not Granted', '', [
+        {
+          text: 'OK',
+          onPress: () =>
+            ToastAndroid.show(
+              'Permission denied. Go to settings and give location access.',
+              ToastAndroid.SHORT,
+            ),
+        },
+      ]);
+    }
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const downloadImage = (imgUrl: string) => {
