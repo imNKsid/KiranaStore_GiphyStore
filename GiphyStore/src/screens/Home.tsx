@@ -16,7 +16,7 @@ import {
   GiphyMedia,
   GiphySDK,
 } from '@giphy/react-native-sdk';
-import Share from 'react-native-share';
+import Share, {ShareSingleOptions} from 'react-native-share';
 import RNFetchBlob from 'rn-fetch-blob';
 
 const key = 'HG3g4GJ0BLvcXTFzmRM4Z5I8D9H35vKD';
@@ -107,6 +107,7 @@ const Home = () => {
   );
 };
 
+// Function to initiate sharing
 const shareImage = (imgUrl: string) => {
   RNFetchBlob.fetch('GET', imgUrl)
     .then(resp => {
@@ -118,19 +119,20 @@ const shareImage = (imgUrl: string) => {
     .catch(err => console.log('err =>', err));
 };
 
+// Function to share an image to WhatsApp
 const share = (base64image: string) => {
-  console.log('base64image : ', base64image);
   let shareOptions = {
     title: 'Share via',
     url: base64image,
     subject: 'Subject',
     social: Share.Social.WHATSAPP,
-  };
+  } as ShareSingleOptions;
 
   Share.shareSingle(shareOptions)
     .then(res => {
-      console.log(res);
+      // console.log('Share success =>', res);
       Alert.alert('Image Shared Successfully.');
+      // Showing alert after successful sharing
     })
     .catch(err => {
       err && console.log(err);
@@ -138,17 +140,11 @@ const share = (base64image: string) => {
 };
 
 const downloadImage = (imgUrl: string) => {
-  // Main function to download the image
+  let date = new Date(); // To add the time suffix in filename
 
-  // To add the time suffix in filename
-  let date = new Date();
-  // Image URL which we want to download
-  let image_URL = imgUrl;
-  // Getting the extention of the file
-  let ext: any = getExtention(image_URL);
-  console.log();
-
+  let ext: any = getExtention(imgUrl); // Getting the extention of the file
   ext = '.' + ext[0];
+
   // Get config and fs from RN Fetch Blob
   // config: To pass the downloading related options
   // fs: Directory path where we want our image to download
@@ -169,16 +165,16 @@ const downloadImage = (imgUrl: string) => {
     },
   };
   config(options)
-    .fetch('GET', image_URL)
+    .fetch('GET', imgUrl)
     .then(res => {
-      // Showing alert after successful downloading
-      console.log('res -> ', JSON.stringify(res));
+      // console.log('res -> ', JSON.stringify(res));
       Alert.alert('Image Downloaded Successfully.');
+      // Showing alert after successful downloading
     });
 };
 
+// Function to get the file extension
 const getExtention = (filename: string) => {
-  // To get the file extension
   return /[.]/.exec(filename) ? /[^.]+$/.exec(filename) : undefined;
 };
 
