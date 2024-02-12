@@ -7,7 +7,6 @@ import {
   View,
 } from 'react-native';
 import React from 'react';
-import {GiphyMedia} from '@giphy/react-native-sdk';
 import {throttle} from 'lodash';
 import {
   checkPermission,
@@ -16,7 +15,7 @@ import {
 } from '../utils/general-utils';
 
 interface ModalProps {
-  media: GiphyMedia | null;
+  media: string;
   onClose: () => void;
   isDarkTheme: boolean;
 }
@@ -29,7 +28,7 @@ const GifDescModal = (props: ModalProps) => {
     <Modal
       transparent={true}
       animationType="slide"
-      visible={media.data.images.original.url ? true : false}
+      visible={media ? true : false}
       statusBarTranslucent={true}
       onRequestClose={onClose}>
       <View style={styles.modalContainer}>
@@ -48,13 +47,10 @@ const GifDescModal = (props: ModalProps) => {
             />
           </TouchableOpacity>
           <View style={styles.imageNbtn}>
-            <Image
-              source={{uri: media.data.images.original.url}}
-              style={styles.modalImage}
-            />
+            <Image source={{uri: media}} style={styles.modalImage} />
             <View style={styles.btnsContainer}>
               <TouchableOpacity
-                onPress={() => throttledShare(media.data.images.original.url)}
+                onPress={() => throttledShare(media)}
                 style={styles.shareBtnView}>
                 <Text
                   style={[
@@ -65,7 +61,7 @@ const GifDescModal = (props: ModalProps) => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => downloadImage(media.data.images.original.url)}
+                onPress={() => downloadImage(media)}
                 style={[
                   styles.btnView,
                   isDarkTheme ? styles.lightBtnView : styles.darkBtnView,
