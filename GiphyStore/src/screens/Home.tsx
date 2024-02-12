@@ -1,31 +1,150 @@
 import {
+  Dimensions,
+  FlatList,
   Image,
+  RefreshControl,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
   useColorScheme,
 } from 'react-native';
-import React, {useState} from 'react';
-import {
-  GiphyContent,
-  GiphyGridView,
-  GiphyMedia,
-  GiphySDK,
-} from '@giphy/react-native-sdk';
+import React, {useCallback, useEffect, useState} from 'react';
 import GifDescModal from '../components/GifDescModal';
+import axios from 'axios';
 
+const {width} = Dimensions.get('screen');
+
+const BASE_URL = 'https://api.giphy.com/v1/gifs';
 const key = 'HG3g4GJ0BLvcXTFzmRM4Z5I8D9H35vKD';
-
-GiphySDK.configure({apiKey: key});
+const limit = 26;
 
 const Home = () => {
   const [searchText, setSearchText] = useState('');
-  const [media, setMedia] = useState<GiphyMedia | null>(null);
+  const [media, setMedia] = useState('');
+  const [gifs, setGifs] = useState([]);
+  const [refreshPage, setRefreshPage] = useState(false);
+  const [offset, setOffset] = useState(0);
+
+  useEffect(() => {
+    const source = axios.CancelToken.source();
+
+    const fetchData = async () => {
+      try {
+        let apiUrl;
+        let params;
+
+        // Common parameters for both trending and search API calls
+        const commonParams = {
+          api_key: key,
+          limit,
+          offset,
+          rating: 'g',
+          bundle: 'messaging_non_clips',
+        };
+
+        if (searchText.length > 3) {
+          apiUrl = `${BASE_URL}/search`;
+          params = {
+            ...commonParams,
+            q: searchText,
+            lang: 'en',
+          };
+        } else {
+          apiUrl = `${BASE_URL}/trending`;
+          params = commonParams;
+        }
+
+        const res = await axios.get(apiUrl, {
+          cancelToken: source.token,
+          params,
+        });
+
+        if (
+          res?.data?.data &&
+          Array.isArray(res.data.data) &&
+          res.data.data?.length > 0
+        ) {
+          const tempArr = res.data.data.map((item: any) => ({
+            imageUrl: item.images.original.url,
+          }));
+          if (offset === 0) {
+            setGifs(tempArr);
+          } else {
+            const extendedArr: any = [...gifs, ...tempArr];
+            setGifs(extendedArr);
+          }
+        }
+      } catch (error) {
+        if (axios.isCancel(error)) {
+          console.log('Request canceled:', error.message);
+        } else {
+          console.error('API call failed:', error);
+        }
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      source.cancel('Component unmounted');
+    };
+  }, [offset, searchText]);
+
+  // console.log('gifs =>', gifs);
 
   const theme = useColorScheme();
   const isDarkTheme = theme === 'dark';
+
+  const renderGif = useCallback(
+    ({item, index}: any) => {
+      return (
+        <TouchableOpacity onPress={() => setMedia(item.imageUrl)}>
+          <Image
+            resizeMode="stretch"
+            style={[styles.image, index % 2 === 0 ? {marginRight: 5} : {}]}
+            source={{uri: item.imageUrl}}
+          />
+        </TouchableOpacity>
+      );
+    },
+    [setMedia],
+  );
+
+  const fetchMoreGifs = () => {
+    setOffset(offset + 1);
+  };
+
+  const onRefreshing = useCallback(() => {
+    setRefreshPage(true);
+    setTimeout(() => {
+      setRefreshPage(false);
+    }, 2000);
+  }, []);
+
+  const renderAllGifsCallback = useCallback(
+    () => (
+      <FlatList
+        data={gifs}
+        numColumns={2}
+        columnWrapperStyle={styles.container}
+        renderItem={renderGif}
+        extraData={gifs}
+        scrollEventThrottle={20}
+        refreshControl={
+          <RefreshControl refreshing={refreshPage} onRefresh={onRefreshing} />
+        }
+        onEndReachedThreshold={0.5}
+        onEndReached={fetchMoreGifs}
+        initialNumToRender={10}
+        windowSize={10}
+        maxToRenderPerBatch={8}
+      />
+    ),
+    [gifs, renderGif, refreshPage, onRefreshing, fetchMoreGifs],
+  );
 
   return (
     <View
@@ -67,28 +186,12 @@ const Home = () => {
           placeholderTextColor={'gray'}
         />
       </View>
-      {searchText.length > 3 ? (
-        <>
-          <GiphyGridView
-            content={GiphyContent.search({
-              searchQuery: searchText,
-            })}
-            cellPadding={4}
-            style={{flex: 1}}
-            onMediaSelect={e => setMedia(e.nativeEvent.media)}
-          />
-        </>
-      ) : (
-        <GiphyGridView
-          content={GiphyContent.trendingGifs()}
-          cellPadding={4}
-          style={{flex: 1}}
-          onMediaSelect={e => setMedia(e.nativeEvent.media)}
-        />
-      )}
+
+      {renderAllGifsCallback()}
+
       <GifDescModal
         media={media}
-        onClose={() => setMedia(null)}
+        onClose={() => setMedia('')}
         isDarkTheme={isDarkTheme}
       />
     </View>
@@ -128,6 +231,12 @@ const styles = StyleSheet.create({
   },
   darkSearchInput: {color: 'black'},
   lightSearchInput: {color: 'white'},
+  image: {
+    width: width / 2,
+    height: width / 2,
+    borderWidth: 3,
+    marginBottom: 5,
+  },
   modalContainer: {
     justifyContent: 'center',
     alignItems: 'center',
