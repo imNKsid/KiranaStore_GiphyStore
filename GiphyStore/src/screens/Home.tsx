@@ -25,9 +25,9 @@ const limit = 26;
 let debounceSearch: any;
 
 const Home = () => {
+  const [gifs, setGifs] = useState<{imageUrl: string}[]>([]);
   const [searchText, setSearchText] = useState('');
   const [media, setMedia] = useState('');
-  const [gifs, setGifs] = useState([]);
   const [refreshPage, setRefreshPage] = useState(false);
   const [offset, setOffset] = useState(0);
 
@@ -83,8 +83,9 @@ const Home = () => {
           if (offset === 0) {
             setGifs(tempArr);
           } else {
-            const extendedArr: any = [...gifs, ...tempArr];
-            setGifs(extendedArr);
+            // const extendedArr: any = [...gifs, ...tempArr];
+            // setGifs(extendedArr);
+            setGifs(prevGifs => [...prevGifs, ...tempArr]);
           }
         }
       } catch (error) {
@@ -146,11 +147,23 @@ const Home = () => {
         refreshControl={
           <RefreshControl refreshing={refreshPage} onRefresh={onRefreshing} />
         }
-        onEndReachedThreshold={0.5}
+        onEndReachedThreshold={0.7}
         onEndReached={fetchMoreGifsThrottled}
         initialNumToRender={10}
         windowSize={10}
         maxToRenderPerBatch={8}
+        ListEmptyComponent={
+          <>
+            <View
+              style={{
+                marginTop: 250,
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}>
+              <Text>{'No Data Found'}</Text>
+            </View>
+          </>
+        }
       />
     ),
     [gifs, renderGif, refreshPage, onRefreshing, fetchMoreGifs],
@@ -246,61 +259,8 @@ const styles = StyleSheet.create({
   image: {
     width: width / 2,
     height: width / 2,
-    borderWidth: 3,
     marginBottom: 5,
   },
-  modalContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '110%',
-    width: '100%',
-    backgroundColor: '#00000080', //'rgb(255,255,255,0.8)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    width: 350,
-    height: 380,
-    alignSelf: 'center',
-    borderRadius: 20,
-  },
-  crossIcon: {
-    alignSelf: 'flex-end',
-    width: 30,
-    height: 30,
-    marginRight: 5,
-    marginTop: 5,
-  },
-  imageNbtn: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  modalImage: {width: 290, height: 265, resizeMode: 'stretch'},
-  btnsContainer: {
-    marginTop: 10,
-    width: '75%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  shareBtnView: {
-    width: 150,
-    height: 50,
-    backgroundColor: '#5ABB58',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  shareBtnText: {textAlign: 'center'},
-  btnView: {
-    width: 100,
-    height: 50,
-    backgroundColor: 'black',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  btnText: {textAlign: 'center', color: 'white', top: -1},
 });
 
 export default Home;
