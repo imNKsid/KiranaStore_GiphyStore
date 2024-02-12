@@ -24,6 +24,8 @@ const GifDescModal = (props: ModalProps) => {
   const {media, onClose, isDarkTheme} = props;
 
   const throttledShare = throttle(shareImage, 1000);
+  const throttledDownload = throttle(downloadImage, 1000);
+
   return media ? (
     <Modal
       transparent={true}
@@ -61,7 +63,7 @@ const GifDescModal = (props: ModalProps) => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => downloadImage(media)}
+                onPress={() => throttledDownload(media)}
                 style={[
                   styles.btnView,
                   isDarkTheme ? styles.lightBtnView : styles.darkBtnView,
