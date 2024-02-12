@@ -12,14 +12,17 @@ import {
   useColorScheme,
 } from 'react-native';
 import React, {useCallback, useEffect, useState} from 'react';
-import GifDescModal from '../components/GifDescModal';
 import axios from 'axios';
+import {throttle} from 'lodash';
+import GifDescModal from '../components/GifDescModal';
 
 const {width} = Dimensions.get('screen');
 
 const BASE_URL = 'https://api.giphy.com/v1/gifs';
 const key = 'HG3g4GJ0BLvcXTFzmRM4Z5I8D9H35vKD';
 const limit = 26;
+
+let debounceSearch: any;
 
 const Home = () => {
   const [searchText, setSearchText] = useState('');
@@ -46,6 +49,13 @@ const Home = () => {
         };
 
         if (searchText.length > 3) {
+          // Concept of debouncing used here. Just making a delay of 250 ms.
+          if (!debounceSearch) {
+            debounceSearch = setTimeout(() => {
+              debounceSearch = null;
+            }, 250);
+          }
+
           apiUrl = `${BASE_URL}/search`;
           params = {
             ...commonParams,
@@ -137,7 +147,7 @@ const Home = () => {
           <RefreshControl refreshing={refreshPage} onRefresh={onRefreshing} />
         }
         onEndReachedThreshold={0.5}
-        onEndReached={fetchMoreGifs}
+        onEndReached={fetchMoreGifsThrottled}
         initialNumToRender={10}
         windowSize={10}
         maxToRenderPerBatch={8}
@@ -145,6 +155,8 @@ const Home = () => {
     ),
     [gifs, renderGif, refreshPage, onRefreshing, fetchMoreGifs],
   );
+
+  const fetchMoreGifsThrottled = throttle(fetchMoreGifs, 1000);
 
   return (
     <View
